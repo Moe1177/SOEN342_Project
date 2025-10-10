@@ -2,8 +2,16 @@ package com.SOEN342.railway_network_system.model;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Route {
     private String routeID; 
     private String departureCity;
@@ -12,78 +20,67 @@ public class Route {
     private Date arrivalTime; 
     private String totalDuration; 
 
-    //constructor
-    public Route(String routeID, String departureCity, String arrivalCity, Date departureTime, Date arrivalTime) {
-        this.routeID = routeID; 
-        this.departureCity = departureCity; 
-        this.arrivalCity = arrivalCity; 
-        this.departureTime = departureTime;
-        this.arrivalTime = arrivalTime;        
-    }
-
-    //getters and setters
-    public String getRouteID() {
-        return routeID;
-    }
-
-    public void setRouteID(String routeID) {
-        this.routeID = routeID;
-    }
-
-    public String getDepartureCity() {
-        return departureCity;
-    }
-
-    public void setDepartureCity(String departureCity) {
-        this.departureCity = departureCity;
-    }
-
-    public String getArrivalCity() {
-        return arrivalCity;
-    }
-
-    public void setArrivalCity(String arrivalCity) {
-        this.arrivalCity = arrivalCity;
-    }
-
-    public Date getDepartureTime() {
-        return departureTime;
-    }
-
-    public void setDepartureTime(Date departureTime) {
-        this.departureTime = departureTime;
-    }
-
-    public Date getArrivalTime() {
-        return arrivalTime;
-    }
-
-    public void setArrivalTime(Date arrivalTime) {
-        this.arrivalTime = arrivalTime;
-    }
-
-    public String getTotalDuration() {
-        return totalDuration;
-    }
-
-    public void setTotalDuration(String totalDuration) {
-        this.totalDuration = totalDuration;
-    }
-
     //calculate total duration of train ride 
     public void calculateDuration(){
-
+        if (departureTime == null || arrivalTime == null) {
+            totalDuration = null;
+            return;
+        }
+        long millis = arrivalTime.getTime() - departureTime.getTime();
+        if (millis < 0) {
+            // assume arrival is next day if negative
+            millis += TimeUnit.DAYS.toMillis(1);
+        }
+        long hours = TimeUnit.MILLISECONDS.toHours(millis);
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(millis) - TimeUnit.HOURS.toMinutes(hours);
+        StringBuilder sb = new StringBuilder();
+        if (hours < 10) sb.append('0');
+        sb.append(hours).append(":");
+        if (minutes < 10) sb.append('0');
+        sb.append(minutes);
+        totalDuration = sb.toString();
     }
 
     //check to see if map matches user's criteria
     public boolean matchesCriteria(Map<String, String> criteria){
-            return false;
-
+            if (criteria == null || criteria.isEmpty()) {
+                return true;
+            }
+            for (Map.Entry<String, String> entry : criteria.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                if (value == null) continue;
+                switch (key) {
+                    case "routeID":
+                        if (!value.equalsIgnoreCase(routeID)) return false; break;
+                    case "departureCity":
+                        if (!value.equalsIgnoreCase(departureCity)) return false; break;
+                    case "arrivalCity":
+                        if (!value.equalsIgnoreCase(arrivalCity)) return false; break;
+                    case "totalDuration":
+                        if (totalDuration == null) calculateDuration();
+                        if (totalDuration == null || !totalDuration.equalsIgnoreCase(value)) return false; break;
+                    default:
+                        // unrecognized criteria: ignore
+                        break;
+                }
+            }
+            return true;
     }
 
     //display route info 
     public String displayRouteInfo(){
-        return "";
+        if (totalDuration == null) {
+            calculateDuration();
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("Route ").append(routeID)
+          .append(" - ")
+          .append(departureCity).append(" -> ").append(arrivalCity)
+          .append(" | Depart: ").append(departureTime)
+          .append(" | Arrive: ").append(arrivalTime)
+          .append(" | Duration: ").append(totalDuration);
+        return sb.toString();
     }
 
 
