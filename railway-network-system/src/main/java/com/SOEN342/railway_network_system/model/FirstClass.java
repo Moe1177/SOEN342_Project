@@ -1,11 +1,14 @@
 package com.SOEN342.railway_network_system.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class FirstClass implements Ticket {
     private double ticketRate;
-
-    public FirstClass(double ticketRate) {
-        this.ticketRate = ticketRate;
-    } 
 
     @Override
     public double getTicketRate(){
