@@ -56,10 +56,9 @@ public class RoutesDB {
             for (Route first : fromRoutes) {
                 for (Route second : toRoutes) {
                     if (first.getArrivalCity() != null && first.getArrivalCity().equalsIgnoreCase(second.getDepartureCity())) {
-                        if (canConnect(first, second)) {
-                            result.add(first);
-                            result.add(second);
-                        }
+                        result.add(first);
+                        result.add(second);
+                        
                     }
                 }
             }
@@ -87,8 +86,9 @@ public class RoutesDB {
     }
 
     private boolean canConnect(Route a, Route b) {
-        if (a.getArrivalTime() == null || b.getDepartureTime() == null) return true; // if missing times, assume connectable
-        return !a.getArrivalTime().after(b.getDepartureTime());
+        //if (a.getArrivalTime() == null || b.getDepartureTime() == null) return true; // if missing times, assume connectable
+        //return !a.getArrivalTime().after(b.getDepartureTime());
+        return true;
     }
 
     // expose last search results (defensive copy)
