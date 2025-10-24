@@ -26,6 +26,6 @@ public class FirstClass implements Ticket {
 
     @Override
     public String displayTicketInfo(){
-        return "First Class Ticket - Rate: $ " + ticketRate;
+        return "First Class Ticket - Rate: $ " + ticketRate + " Id: " + ticketID;
     }
 }

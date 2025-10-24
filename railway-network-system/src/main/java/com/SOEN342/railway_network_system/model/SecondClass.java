@@ -26,6 +26,6 @@ public class SecondClass implements Ticket{
 
     @Override
     public String displayTicketInfo(){
-        return "Second Class Ticket - Rate: $ " + ticketRate;
+        return "Second Class Ticket - Rate: $ " + ticketRate + " Id: " + ticketId;
     }
 }
