@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -12,6 +13,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Scanner;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.stereotype.Component;
@@ -27,12 +30,18 @@ public class Console {
     private final RoutesDB routesDB;
     private final TrainsDB trainsDB;
     private final TicketsDB ticektsDB; 
+    private final ClientsDB clientsDB;
+    private final ReservationsDB reservationsDB;
+    private final TripsDB tripsDB;
 
     @Autowired
-    public Console(RoutesDB routesDB, TrainsDB trainsDB, TicketsDB ticketsDB) {
+    public Console(RoutesDB routesDB, TrainsDB trainsDB, TicketsDB ticketsDB, ClientsDB clientsDB, ReservationsDB reservationsDB, TripsDB tripsDB) {
         this.routesDB = routesDB;
         this.trainsDB = trainsDB;
         this.ticektsDB = ticketsDB;
+        this.clientsDB = clientsDB;
+        this.reservationsDB = reservationsDB;
+        this.tripsDB = tripsDB;
     }
 
     @PostConstruct
@@ -66,8 +75,8 @@ public class Console {
                     routesDB.addRoute(route);
 
                     trainsDB.addTrain(routeId, new Train(trainType, normalizeDays(days)));
-                    ticektsDB.addTicket(routeId, "first", new FirstClass(firstRate));
-                    ticektsDB.addTicket(routeId, "second", new SecondClass(secondRate));
+                    ticektsDB.addTicket(routeId, "first", new FirstClass(firstRate, null));
+                    ticektsDB.addTicket(routeId, "second", new SecondClass(secondRate, null));
                 }
             }
         } catch (Exception e) {
@@ -137,6 +146,112 @@ public class Console {
         return results;
     }
 
+    public void bookTrip(List<Route> lastResults, Scanner scanner){
+        if (lastResults == null || lastResults.isEmpty()){
+            System.out.println("No search results to book from. Run a search first.");
+            return;
+        }
+        displayRoutes(lastResults);
+        System.out.print("Select connection index to book: ");
+        String idxStr = scanner.nextLine().trim();
+        int idx;
+        try{
+            idx = Integer.parseInt(idxStr);
+        }catch(Exception e){
+            System.out.println("Invalid index.");
+            return;
+        }
+        if (idx < 0 || idx >= lastResults.size()){
+            System.out.println("Index out of range.");
+            return;
+        }
+        Route selected = lastResults.get(idx);
+        System.out.print("Number of travelers: ");
+        int n;
+        try{
+            n = Integer.parseInt(scanner.nextLine().trim());
+        }catch(Exception e){
+            System.out.println("Invalid number.");
+            return;
+        }
+        List<Reservation> resList = new ArrayList<>();
+        for(int i=0;i<n;i++){
+            System.out.println("-- Traveler " + (i+1) + " --");
+            System.out.print("First name: ");
+            String fn = scanner.nextLine().trim();
+            System.out.print("Last name: ");
+            String ln = scanner.nextLine().trim();
+            System.out.print("Age: ");
+            int age = Integer.parseInt(scanner.nextLine().trim());
+            System.out.print("Gov ID (passport/state): ");
+            String gid = scanner.nextLine().trim();
+            // Optional: class prompt (defaults to second)
+            System.out.print("Ticket class (first/second) [default: second]: ");
+            String cls = scanner.nextLine().trim();
+            if(cls.isEmpty()) cls = "second";
+            try{
+                Reservation r = reservationsDB.createReservation(fn, ln, age, gid, selected.getRouteID(), cls.toLowerCase());
+                resList.add(r);
+                clientsDB.upsertClient(fn, ln, gid);
+            }catch(IllegalStateException dup){
+                System.out.println("Cannot add reservation: " + dup.getMessage());
+                return;
+            }
+        }
+        Trip t = tripsDB.createTrip(selected, resList);
+        System.out.println("✅ Trip booked! Trip ID: " + t.getTripId());
+        System.out.println("Tickets:");
+        for(Reservation r: resList){
+            System.out.println(" - " + r.getPassengerFirstName() + " " + r.getPassengerLastName() + 
+                               " | ticket #" + r.getTicketNumber() + " | class: " + r.getTicketClass());
+        }
+    }
+
+    public void viewTrips(Scanner scanner){
+        System.out.print("Enter your last name: ");
+        String ln = scanner.nextLine().trim();
+        System.out.print("Enter your gov ID: ");
+        String gid = scanner.nextLine().trim();
+        List<Trip> mine = tripsDB.getTripsForClient(ln, gid);
+        if(mine.isEmpty()){
+            System.out.println("No trips found.");
+            return;
+        }
+        Date now = new Date();
+        List<Route> all = routesDB.getAllRoutes();
+        Map<String, Route> byId = new HashMap<>();
+        for(Route r: all){ byId.put(r.getRouteID(), r); }
+    
+        System.out.println("== Current/Future Trips ==");
+        for(Trip t: mine){
+            Route r = byId.get(t.getRouteID());
+            Date dep = r != null ? r.getDepartureTime() : null;
+            if(dep == null || !dep.before(now)){
+                printTrip(t, r);
+            }
+        }
+        System.out.println("== Past Trips (History) ==");
+        for(Trip t: mine){
+            Route r = byId.get(t.getRouteID());
+            Date dep = r != null ? r.getDepartureTime() : null;
+            if(dep != null && dep.before(now)){
+                printTrip(t, r);
+            }
+        }
+    }
+    
+    private void printTrip(Trip t, Route r){
+        System.out.println("Trip " + t.getTripId() + " | route " + t.getRouteID() + 
+            (r!=null ? (" | " + r.getDepartureCity() + " -> " + r.getArrivalCity() 
+            + " on " + r.getDepartureTime()) : ""));
+        for(Reservation x: t.getReservations()){
+            System.out.println("   * " + x.getPassengerFirstName() + " " + x.getPassengerLastName() +
+                               " (age " + x.getPassengerAge() + ", id " + x.getPassengerGovId() + 
+                               "), ticket #" + x.getTicketNumber());
+        }
+    }
+    
+    
     private int getDurationMinutes(Route r) {
         if (r.getTotalDuration() == null) r.calculateDuration();
         String d = r.getTotalDuration();
