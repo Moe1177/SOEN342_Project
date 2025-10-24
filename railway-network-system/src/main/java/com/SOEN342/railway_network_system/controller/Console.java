@@ -197,19 +197,8 @@ public class Console {
                 System.out.println("Cannot add reservation: " + dup.getMessage());
                 return;
             }
-
-            System.out.print("Departure date (YYYY-MM-DD): ");
-            String dateStr = scanner.nextLine().trim();
-            Date departureDate;
-            try {
-                SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-                df.setLenient(false);
-                departureDate = df.parse(dateStr);
-            } catch (Exception e) {
-                System.out.println("Invalid date. Please use YYYY-MM-DD.");
-                return;
-            }
-        Trip t = tripsDB.createTrip(selected, resList, departureDate);
+        }
+        Trip t = tripsDB.createTrip(selected, resList);
         System.out.println("✅ Trip booked! Trip ID: " + t.getTripId());
         System.out.println("Tickets:");
         for(Reservation r: resList){
@@ -217,10 +206,8 @@ public class Console {
                                " | ticket #" + r.getTicketNumber() + " | class: " + r.getTicketClass());
         }
     }
-}
 
     public void viewTrips(Scanner scanner){
-        java.util.Date today = new java.util.Date();
         System.out.print("Enter your last name: ");
         String ln = scanner.nextLine().trim();
         System.out.print("Enter your gov ID: ");
@@ -234,42 +221,36 @@ public class Console {
         List<Route> all = routesDB.getAllRoutes();
         Map<String, Route> byId = new HashMap<>();
         for(Route r: all){ byId.put(r.getRouteID(), r); }
+    
         System.out.println("== Current/Future Trips ==");
-        for (Trip t : mine) {
-        // If user didn't provide a date somehow, treat as current/future fallback
-            if (t.getDepartureDate() == null || compareDateOnly(t.getDepartureDate(), today) >= 0) {
-            printTrip(t, byId.get(t.getRouteID())); // your existing print method
+        for(Trip t: mine){
+            Route r = byId.get(t.getRouteID());
+            Date dep = r != null ? r.getDepartureTime() : null;
+            if(dep == null || !dep.before(now)){
+                printTrip(t, r);
+            }
         }
-    } 
         System.out.println("== Past Trips (History) ==");
-        for (Trip t : mine) {
-            if (t.getDepartureDate() != null && compareDateOnly(t.getDepartureDate(), today) < 0) {
-            printTrip(t, byId.get(t.getRouteID()));
+        for(Trip t: mine){
+            Route r = byId.get(t.getRouteID());
+            Date dep = r != null ? r.getDepartureTime() : null;
+            if(dep != null && dep.before(now)){
+                printTrip(t, r);
+            }
         }
     }
-}
     
     private void printTrip(Trip t, Route r){
-        String when = "";
-        if (t.getDepartureDate() != null) {
-            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-            when = df.format(t.getDepartureDate());
-        } else if (r != null && r.getDepartureTime() != null) {
-            // fallback (legacy): will look like 1970 if only time is known
-            when = r.getDepartureTime().toString();
-        }
-    
-        System.out.println("Trip " + t.getTripId()
-            + " | route " + t.getRouteID()
-            + (r != null ? (" | " + r.getDepartureCity() + " -> " + r.getArrivalCity()) : "")
-            + (when.isEmpty() ? "" : " on " + when));
-    
-        for (Reservation x : t.getReservations()) {
-            System.out.println("   * " + x.getPassengerFirstName() + " " + x.getPassengerLastName()
-                + " (age " + x.getPassengerAge() + ", id " + x.getPassengerGovId() + "), ticket #"
-                + x.getTicketNumber());
+        System.out.println("Trip " + t.getTripId() + " | route " + t.getRouteID() + 
+            (r!=null ? (" | " + r.getDepartureCity() + " -> " + r.getArrivalCity() 
+            + " on " + r.getDepartureTime()) : ""));
+        for(Reservation x: t.getReservations()){
+            System.out.println("   * " + x.getPassengerFirstName() + " " + x.getPassengerLastName() +
+                               " (age " + x.getPassengerAge() + ", id " + x.getPassengerGovId() + 
+                               "), ticket #" + x.getTicketNumber());
         }
     }
+    
     
     private int getDurationMinutes(Route r) {
         if (r.getTotalDuration() == null) r.calculateDuration();
@@ -352,25 +333,5 @@ public class Console {
         }
         cols.add(current.toString().trim());
         return cols;
-    }
-
-    private java.util.Date startOfDay(java.util.Date d) {
-        if (d == null) return null;
-        java.util.Calendar cal = java.util.Calendar.getInstance();
-        cal.setTime(d);
-        cal.set(java.util.Calendar.HOUR_OF_DAY, 0);
-        cal.set(java.util.Calendar.MINUTE, 0);
-        cal.set(java.util.Calendar.SECOND, 0);
-        cal.set(java.util.Calendar.MILLISECOND, 0);
-        return cal.getTime();
-    }
-    
-    private int compareDateOnly(java.util.Date a, java.util.Date b) {
-        java.util.Date sa = startOfDay(a);
-        java.util.Date sb = startOfDay(b);
-        if (sa == null && sb == null) return 0;
-        if (sa == null) return -1;
-        if (sb == null) return 1;
-        return sa.compareTo(sb);
     }
 }
