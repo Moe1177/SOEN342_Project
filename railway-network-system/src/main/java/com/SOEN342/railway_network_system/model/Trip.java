@@ -6,16 +6,16 @@ import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
-public class Trip {
-    private String tripId;       // unique alpha-numeric id
-    private String routeID;      
-    private Date departureDate;
-    private List<Reservation> reservations = new ArrayList<>();
+public 
+
+class Trip {
+    private final String tripId;       // unique alpha-numeric id
+    private final String routeID;      
+    private final Date DepartureDate;
+    private final List<Reservation> reservations = new ArrayList<>();
 
     public void addReservation(Reservation r){
         reservations.add(r);
