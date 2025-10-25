@@ -98,7 +98,27 @@ public class RailwayNetworkSystemApplication implements CommandLineRunner {
         System.out.print("Arrival city (blank to skip): ");
         String arr = scanner.nextLine().trim();
         if (!arr.isEmpty()) map.put("arrivalCity", arr);
-        // Additional fields can be added later as search expands
+        System.out.print("Departure time HH:mm (blank to skip): ");
+        String depTime = scanner.nextLine().trim();
+        if (!depTime.isEmpty()) map.put("departureTime", depTime);
+        System.out.print("Arrival time HH:mm (blank to skip): ");
+        String arrTime = scanner.nextLine().trim();
+        if (!arrTime.isEmpty()) map.put("arrivalTime", arrTime);
+        System.out.print("Duration HH:mm (blank to skip): ");
+        String dur = scanner.nextLine().trim();
+        if (!dur.isEmpty()) map.put("totalDuration", dur);
+        System.out.print("Train type (blank to skip): ");
+        String type = scanner.nextLine().trim();
+        if (!type.isEmpty()) map.put("trainType", type);
+        System.out.print("Operating day (Mon/Tue/... or Daily) (blank to skip): ");
+        String day = scanner.nextLine().trim();
+        if (!day.isEmpty()) map.put("operatingDay", day);
+        System.out.print("Max first class price (blank to skip): ");
+        String maxFirst = scanner.nextLine().trim();
+        if (!maxFirst.isEmpty()) map.put("maxFirstPrice", maxFirst);
+        System.out.print("Max second class price (blank to skip): ");
+        String maxSecond = scanner.nextLine().trim();
+        if (!maxSecond.isEmpty()) map.put("maxSecondPrice", maxSecond);
         return map;
     }
 
