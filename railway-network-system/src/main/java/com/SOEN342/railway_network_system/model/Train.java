@@ -11,17 +11,72 @@ public class Train {
     private String trainType; 
     private String daysOfOperation; // comma-separated days e.g., "Mon,Tue,Wed"
 
-    //check if train runs on a specific day (case-insensitive)
+    //check if train runs on a specific day (case-insensitive), supports "Daily" and ranges like Mon-Fri, Fri-Sun
     public boolean operatesOn(String day) {
         if (day == null || daysOfOperation == null) return false;
-        String target = day.trim().toLowerCase();
-        String[] tokens = daysOfOperation.split(",");
-        for (String token : tokens) {
-            if (token.trim().toLowerCase().equals(target)) {
-                return true;
+        String target = day.trim();
+        if (target.isEmpty()) return false;
+
+        String normalized = daysOfOperation.trim();
+        if (normalized.equalsIgnoreCase("Daily")) return true;
+
+        String[] tokens = normalized.split(",");
+        for (String raw : tokens) {
+            String token = raw.trim();
+            if (token.isEmpty()) continue;
+            if (token.contains("-")) {
+                if (isDayInRange(target, token)) return true;
+            } else {
+                if (equalsDay(token, target)) return true;
             }
         }
         return false; 
+    }
+
+    private boolean equalsDay(String a, String b) {
+        return normalizeDay(a).equals(normalizeDay(b));
+    }
+
+    private String normalizeDay(String d) {
+        String x = d.trim().toLowerCase();
+        switch (x) {
+            case "mon": case "monday": return "mon";
+            case "tue": case "tues": case "tuesday": return "tue";
+            case "wed": case "wednesday": return "wed";
+            case "thu": case "thur": case "thurs": case "thursday": return "thu";
+            case "fri": case "friday": return "fri";
+            case "sat": case "saturday": return "sat";
+            case "sun": case "sunday": return "sun";
+            default: return x;
+        }
+    }
+
+    private boolean isDayInRange(String target, String rangeToken) {
+        String[] parts = rangeToken.split("-");
+        if (parts.length != 2) return false;
+        String start = normalizeDay(parts[0]);
+        String end = normalizeDay(parts[1]);
+        String day = normalizeDay(target);
+
+        String[] order = {"mon","tue","wed","thu","fri","sat","sun"};
+        int startIdx = indexOf(order, start);
+        int endIdx = indexOf(order, end);
+        int dayIdx = indexOf(order, day);
+        if (startIdx == -1 || endIdx == -1 || dayIdx == -1) return false;
+
+        if (startIdx <= endIdx) {
+            return dayIdx >= startIdx && dayIdx <= endIdx;
+        } else {
+            // wrap-around, e.g., Fri-Sun
+            return dayIdx >= startIdx || dayIdx <= endIdx;
+        }
+    }
+
+    private int indexOf(String[] arr, String v) {
+        for (int i = 0; i < arr.length; i++) {
+            if (arr[i].equals(v)) return i;
+        }
+        return -1;
     }
 
     //check if train type matches user's criteria (case-insensitive)

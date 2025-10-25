@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -14,7 +13,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.stereotype.Component;
@@ -166,6 +164,37 @@ public class Console {
             return;
         }
         Route selected = lastResults.get(idx);
+        // Prompt for travel date and validate against days of operation
+        Train selectedTrain = trainsDB.getTrainByRoute(selected.getRouteID());
+        Date travelDate = null;
+        while (true) {
+            System.out.print("Enter travel date (yyyy-MM-dd): ");
+            String dateStr = scanner.nextLine().trim();
+            Date parsed = null;
+            try {
+                SimpleDateFormat ymd = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+                parsed = ymd.parse(dateStr);
+                Date todayStart = ymd.parse(ymd.format(new Date()));
+                if (parsed.before(todayStart)) {
+                    System.out.println("Date is in the past. Please enter today or a future date.");
+                    continue;
+                }
+            } catch (Exception e) {
+                System.out.println("Invalid date format. Please use yyyy-MM-dd.");
+                continue;
+            }
+            if (selectedTrain == null || selectedTrain.getDaysOfOperation() == null || selectedTrain.getDaysOfOperation().isEmpty()) {
+                travelDate = parsed; // no restriction if unknown
+                break;
+            }
+            String dayOfWeek = new SimpleDateFormat("EEE", Locale.US).format(parsed); // e.g., Mon
+            if (selectedTrain.operatesOn(dayOfWeek)) {
+                travelDate = parsed;
+                break;
+            } else {
+                System.out.println("Train does not operate on " + dayOfWeek + ". Operates: " + selectedTrain.getDaysOfOperation());
+            }
+        }
         System.out.print("Number of travelers: ");
         int n;
         try{
@@ -198,7 +227,7 @@ public class Console {
                 return;
             }
         }
-        Trip t = tripsDB.createTrip(selected, resList);
+        Trip t = tripsDB.createTrip(selected, resList, travelDate);
         System.out.println("✅ Trip booked! Trip ID: " + t.getTripId());
         System.out.println("Tickets:");
         for(Reservation r: resList){
@@ -225,29 +254,43 @@ public class Console {
         System.out.println("== Current/Future Trips ==");
         for(Trip t: mine){
             Route r = byId.get(t.getRouteID());
-            Date dep = r != null ? r.getDepartureTime() : null;
-            if(dep == null || !dep.before(now)){
+            Date depDate = t.getDepartureDate();
+            if(depDate == null || !stripToDate(depDate).before(stripToDate(now))){
                 printTrip(t, r);
             }
         }
         System.out.println("== Past Trips (History) ==");
         for(Trip t: mine){
             Route r = byId.get(t.getRouteID());
-            Date dep = r != null ? r.getDepartureTime() : null;
-            if(dep != null && dep.before(now)){
+            Date depDate = t.getDepartureDate();
+            if(depDate != null && stripToDate(depDate).before(stripToDate(now))){
                 printTrip(t, r);
             }
         }
     }
     
     private void printTrip(Trip t, Route r){
+        SimpleDateFormat dateFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+        SimpleDateFormat timeFmt = new SimpleDateFormat("HH:mm", Locale.US);
+        String datePart = t.getDepartureDate() != null ? dateFmt.format(t.getDepartureDate()) : "N/A";
+        String depTime = (r!=null && r.getDepartureTime()!=null) ? timeFmt.format(r.getDepartureTime()) : "--:--";
+        String arrTime = (r!=null && r.getArrivalTime()!=null) ? timeFmt.format(r.getArrivalTime()) : "--:--";
         System.out.println("Trip " + t.getTripId() + " | route " + t.getRouteID() + 
             (r!=null ? (" | " + r.getDepartureCity() + " -> " + r.getArrivalCity() 
-            + " on " + r.getDepartureTime()) : ""));
+            + " on " + datePart + " | " + depTime + "-" + arrTime) : ""));
         for(Reservation x: t.getReservations()){
             System.out.println("   * " + x.getPassengerFirstName() + " " + x.getPassengerLastName() +
                                " (age " + x.getPassengerAge() + ", id " + x.getPassengerGovId() + 
                                "), ticket #" + x.getTicketNumber());
+        }
+    }
+    
+    private Date stripToDate(Date d){
+        try{
+            SimpleDateFormat ymd = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+            return ymd.parse(ymd.format(d));
+        }catch(Exception e){
+            return d;
         }
     }
     
