@@ -376,8 +376,6 @@ public class Console {
             return;
         }
 
-        // Show options (including prices via displayRoutes) and reuse booking flow
-        displayRoutes(results);
         bookTrip(results, scanner);
     }
 
