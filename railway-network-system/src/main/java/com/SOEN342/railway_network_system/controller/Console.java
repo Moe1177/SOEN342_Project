@@ -282,7 +282,7 @@ public class Console {
             try{
                 Reservation r = reservationsDB.createReservation(fn, ln, age, gid, selected.getRouteID(), cls.toLowerCase());
                 resList.add(r);
-                clientsDB.upsertClient(fn, ln, gid);
+                clientsDB.upsertClient(fn, ln, gid, age);
             }catch(IllegalStateException dup){
                 System.out.println("Cannot add reservation: " + dup.getMessage());
                 return;
