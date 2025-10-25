@@ -60,6 +60,20 @@ public class TripsDB {
         return t;
     }
 
+    public synchronized Trip createTrip(Route connection, List<Reservation> reservationsForTrip, Date departureDate){
+        if(connection == null) throw new IllegalArgumentException("Connection is required");
+        String tripId = genTripId();
+        Trip t = new Trip(tripId, connection.getRouteID(), departureDate == null ? new Date() : departureDate);
+        if(reservationsForTrip != null){
+            for(Reservation r: reservationsForTrip){
+                t.addReservation(r);
+            }
+        }
+        trips.put(tripId, t);
+        tripToReservations.put(tripId, new ArrayList<>(t.getReservations()));
+        return t;
+    }
+
     public List<Trip> getTripsForClient(String lastName, String govId){
         //find all reservations for this client, then map to their trips
         Set<String> ticketOnRoute = reservationsDB.findByPassenger(lastName, govId)

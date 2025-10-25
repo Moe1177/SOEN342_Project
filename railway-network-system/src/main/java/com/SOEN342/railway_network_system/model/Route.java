@@ -1,6 +1,8 @@
 package com.SOEN342.railway_network_system.model;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -73,12 +75,13 @@ public class Route {
         if (totalDuration == null) {
             calculateDuration();
         }
+        SimpleDateFormat timeFmt = new SimpleDateFormat("HH:mm", Locale.US);
         StringBuilder sb = new StringBuilder();
         sb.append("Route ").append(routeID)
           .append(" - ")
           .append(departureCity).append(" -> ").append(arrivalCity)
-          .append(" | Depart: ").append(departureTime)
-          .append(" | Arrive: ").append(arrivalTime)
+          .append(" | Depart: ").append(departureTime != null ? timeFmt.format(departureTime) : "N/A")
+          .append(" | Arrive: ").append(arrivalTime != null ? timeFmt.format(arrivalTime) : "N/A")
           .append(" | Duration: ").append(totalDuration);
         return sb.toString();
     }
