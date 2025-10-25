@@ -330,6 +330,57 @@ public class Console {
         }
     }
     
+    // book a trip by directly entering cities (mirrors Option 5 wording/flow after search)
+    public void bookTripByCities(Scanner scanner){
+        if (scanner == null) return;
+        // Prompt for cities
+        System.out.print("Departure city (blank to skip): ");
+        String dep = scanner.nextLine().trim();
+
+        String arr = null;
+        while (true) {
+            System.out.print("Arrival city (must provide): ");
+            arr = scanner.nextLine().trim();
+            if (arr.isEmpty()) {
+                System.out.println("Arrival city is required.");
+                continue;
+            }
+            boolean exists = false;
+            List<Route> all = routesDB.getAllRoutes();
+            for (Route r : all) {
+                if (r.getArrivalCity() != null && r.getArrivalCity().equalsIgnoreCase(arr)) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                System.out.println("We do not have any arrival cities there. Please enter a different arrival city.");
+                continue;
+            }
+            break;
+        }
+
+        // Prompt for indirect connections (same wording as search option)
+        System.out.print("Include indirect connections (1- and 2-stop)? [y/N]: ");
+        String yn = scanner.nextLine().trim().toLowerCase(Locale.ROOT);
+        boolean includeIndirect = yn.equals("y") || yn.equals("yes");
+
+        // Build criteria and search
+        Map<String, String> criteria = new HashMap<>();
+        if (!dep.isEmpty()) criteria.put("departureCity", dep);
+        criteria.put("arrivalCity", arr);
+
+        List<Route> results = searchForConnection(criteria, includeIndirect);
+        if (results == null || results.isEmpty()){
+            System.out.println("No routes found.");
+            return;
+        }
+
+        // Show options (including prices via displayRoutes) and reuse booking flow
+        displayRoutes(results);
+        bookTrip(results, scanner);
+    }
+
     private void printTrip(Trip t, Route r){
         SimpleDateFormat dateFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
         SimpleDateFormat timeFmt = new SimpleDateFormat("HH:mm", Locale.US);

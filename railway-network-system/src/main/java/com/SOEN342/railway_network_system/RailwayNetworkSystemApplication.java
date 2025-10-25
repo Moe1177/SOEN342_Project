@@ -62,13 +62,16 @@ public class RailwayNetworkSystemApplication implements CommandLineRunner {
                         }
                         break;
                     case "6":
+                        console.bookTripByCities(scanner);
+                        break;
+                    case "7":
                         console.viewTrips(scanner);
                         break;
                     case "q":
                     case "Q":
-                    case "7":
+                    case "8":
                         running = false;
-						System.exit(0);
+                        System.exit(0);
                         break;
                     default:
                         System.out.println("Invalid choice. Try again.");
@@ -85,8 +88,9 @@ public class RailwayNetworkSystemApplication implements CommandLineRunner {
         System.out.println("3) Sort last results by price");
         System.out.println("4) Show last results");
         System.out.println("5) Book a trip from last search results");
-        System.out.println("6) View my trips");
-        System.out.println("7) Quit (or press 'q')");
+        System.out.println("6) Book a trip");
+        System.out.println("7) View my trips");
+        System.out.println("8) Quit (or press 'q')");
         System.out.print("Select: ");
     }
 
