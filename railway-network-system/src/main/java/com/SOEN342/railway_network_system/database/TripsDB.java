@@ -46,20 +46,6 @@ public class TripsDB {
         return id;
     }
 
-    public synchronized Trip createTrip(Route connection, List<Reservation> reservationsForTrip){
-        if(connection == null) throw new IllegalArgumentException("Connection is required");
-        String tripId = genTripId();
-        Trip t = new Trip(tripId, connection.getRouteID(), new Date());
-        if(reservationsForTrip != null){
-            for(Reservation r: reservationsForTrip){
-                t.addReservation(r);
-            }
-        }
-        trips.put(tripId, t);
-        tripToReservations.put(tripId, new ArrayList<>(t.getReservations()));
-        return t;
-    }
-
     public synchronized Trip createTrip(Route connection, List<Reservation> reservationsForTrip, Date departureDate){
         if(connection == null) throw new IllegalArgumentException("Connection is required");
         String tripId = genTripId();

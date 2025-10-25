@@ -14,7 +14,7 @@ public
 class Trip {
     private final String tripId;       // unique alpha-numeric id
     private final String routeID;      
-    private final Date DepartureDate;
+    private final Date departureDate;
     private final List<Reservation> reservations = new ArrayList<>();
 
     public void addReservation(Reservation r){
