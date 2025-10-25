@@ -131,7 +131,18 @@ public class Console {
 
     // search using free-form criteria; if includeIndirect and departure/arrival provided, also build 1- and 2-stop options
     public List<Route> searchForConnection(Map<String, String> criteria, boolean includeIndirect){
-        List<Route> direct = routesDB.searchRoutes(criteria);
+        // base filter using Route.matchesCriteria for cities and duration
+        Map<String,String> base = new HashMap<>();
+        if (criteria != null){
+            for (Map.Entry<String,String> e: criteria.entrySet()){
+                String k = e.getKey();
+                if ("routeID".equalsIgnoreCase(k)) continue; // ignore id
+                if ("departureCity".equalsIgnoreCase(k) || "arrivalCity".equalsIgnoreCase(k) || "totalDuration".equalsIgnoreCase(k)){
+                    base.put(k, e.getValue());
+                }
+            }
+        }
+        List<Route> direct = routesDB.searchRoutes(base);
         List<Route> results = new ArrayList<>(direct);
         if (includeIndirect) {
             String dep = criteria.get("departureCity");
@@ -141,7 +152,57 @@ public class Console {
                 results.addAll(routesDB.findIndirectRoutes(dep, arr, 2));
             }
         }
+        // additional filters: times, train type, operating day, price caps
+        results = filterAdditional(results, criteria);
         return results;
+    }
+
+    private List<Route> filterAdditional(List<Route> routes, Map<String,String> criteria){
+        if (routes == null) return new ArrayList<>();
+        if (criteria == null || criteria.isEmpty()) return routes;
+        String depTime = criteria.get("departureTime");
+        String arrTime = criteria.get("arrivalTime");
+        String trainType = criteria.get("trainType");
+        String opDay = criteria.get("operatingDay");
+        String maxFirst = criteria.get("maxFirstPrice");
+        String maxSecond = criteria.get("maxSecondPrice");
+
+        SimpleDateFormat hhmm = new SimpleDateFormat("HH:mm", Locale.US);
+        Date depFilter = null, arrFilter = null;
+        try { if (depTime != null && !depTime.isEmpty()) depFilter = hhmm.parse(depTime); } catch(Exception ignored){}
+        try { if (arrTime != null && !arrTime.isEmpty()) arrFilter = hhmm.parse(arrTime); } catch(Exception ignored){}
+
+        Double maxFirstD = parseDoubleOrNull(maxFirst);
+        Double maxSecondD = parseDoubleOrNull(maxSecond);
+
+        List<Route> out = new ArrayList<>();
+        for (Route r: routes){
+            if (depFilter != null && r.getDepartureTime() != null && r.getDepartureTime().getTime() != depFilter.getTime()) continue;
+            if (arrFilter != null && r.getArrivalTime() != null && r.getArrivalTime().getTime() != arrFilter.getTime()) continue;
+            if (trainType != null && !trainType.isEmpty()){
+                Train t = trainsDB.getTrainByRoute(r.getRouteID());
+                if (t == null || !t.matchesType(trainType)) continue;
+            }
+            if (opDay != null && !opDay.isEmpty()){
+                Train t = trainsDB.getTrainByRoute(r.getRouteID());
+                if (t == null || t.getDaysOfOperation() == null || t.getDaysOfOperation().isEmpty()) continue;
+                if (!t.operatesOn(opDay)) continue;
+            }
+            if (maxFirstD != null){
+                Ticket f = ticektsDB.getTicketByRoute(r.getRouteID(), "first");
+                if (f == null || f.getTicketRate() > maxFirstD) continue;
+            }
+            if (maxSecondD != null){
+                Ticket s = ticektsDB.getTicketByRoute(r.getRouteID(), "second");
+                if (s == null || s.getTicketRate() > maxSecondD) continue;
+            }
+            out.add(r);
+        }
+        return out;
+    }
+
+    private Double parseDoubleOrNull(String s){
+        try{ return s==null||s.trim().isEmpty()? null: Double.parseDouble(s.trim()); }catch(Exception e){ return null; }
     }
 
     public void bookTrip(List<Route> lastResults, Scanner scanner){
