@@ -187,7 +187,7 @@ public class Console {
                 travelDate = parsed; // no restriction if unknown
                 break;
             }
-            String dayOfWeek = new SimpleDateFormat("EEE", Locale.US).format(parsed); // e.g., Mon
+            String dayOfWeek = weekdayFromYmd(dateStr); // e.g., Mon
             if (selectedTrain.operatesOn(dayOfWeek)) {
                 travelDate = parsed;
                 break;
@@ -291,6 +291,17 @@ public class Console {
             return ymd.parse(ymd.format(d));
         }catch(Exception e){
             return d;
+        }
+    }
+    
+    private String weekdayFromYmd(String yyyymmdd){
+        if (yyyymmdd == null || yyyymmdd.trim().isEmpty()) return "";
+        try{
+            SimpleDateFormat ymd = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+            Date d = ymd.parse(yyyymmdd.trim());
+            return new SimpleDateFormat("EEE", Locale.US).format(d);
+        }catch(Exception e){
+            return "";
         }
     }
     
