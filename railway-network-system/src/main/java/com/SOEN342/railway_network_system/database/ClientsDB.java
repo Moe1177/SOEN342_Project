@@ -15,11 +15,11 @@ public class ClientsDB {
                (govId == null ? "" : govId.trim().toLowerCase());
     }
 
-    public Client upsertClient(String firstName, String lastName, String govId){
+    public Client upsertClient(String firstName, String lastName, String govId, int age){
         String k = key(lastName, govId);
         Client c = clients.get(k);
         if(c == null){
-            c = new Client(firstName, lastName, govId);
+            c = new Client(firstName, lastName, govId, age);
             clients.put(k, c);
         }else{
             if(firstName != null && !firstName.isBlank()){
