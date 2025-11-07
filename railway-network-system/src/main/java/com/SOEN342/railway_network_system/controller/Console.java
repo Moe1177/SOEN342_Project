@@ -73,8 +73,8 @@ public class Console {
                     routesDB.addRoute(route);
 
                     trainsDB.addTrain(routeId, new Train(trainType, normalizeDays(days)));
-                    ticektsDB.addTicket(routeId, "first", new FirstClass(firstRate, null));
-                    ticektsDB.addTicket(routeId, "second", new SecondClass(secondRate, null));
+                    ticektsDB.addTicket(routeId, "first", new FirstClass(routeId, firstRate));
+                    ticektsDB.addTicket(routeId, "second", new SecondClass(routeId, secondRate));
                 }
             }
         } catch (Exception e) {
