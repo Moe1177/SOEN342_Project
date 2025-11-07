@@ -3,6 +3,7 @@ package com.SOEN342.railway_network_system.database;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.SOEN342.railway_network_system.model.Route;
@@ -12,12 +13,21 @@ public class RoutesDB {
     private final List<Route> routes = new ArrayList<>();
     private final List<Route> results = new ArrayList<Route>();
 
+    
+    private final RouteRepository routeRepository;
+
+    @Autowired
+    public RoutesDB(RouteRepository routeRepository) {
+        this.routeRepository = routeRepository;
+    }
+
     //add route to routes database
     public void addRoute(Route route){
         if (route == null) return;
         // Ensure duration is set if times are provided
         route.calculateDuration();
         routes.add(route);
+        routeRepository.save(route);
     }
 
     //return all routes (defensive copy)

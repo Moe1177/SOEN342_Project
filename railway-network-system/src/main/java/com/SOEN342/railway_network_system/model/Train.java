@@ -3,13 +3,34 @@ package com.SOEN342.railway_network_system.model;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+
 
 @Data
+@Entity
+@Table(name = "trains")
 @NoArgsConstructor
 @AllArgsConstructor
 public class Train {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "train_id")
+    private int trainId; 
+
+    @Column(name = "route_id", nullable = false)
+    private String routeId; 
+
+    @Column(name = "train_type", nullable = false)
     private String trainType; 
+
+    @Column(name = "days_of_operation", nullable = false)
     private String daysOfOperation; // comma-separated days e.g., "Mon,Tue,Wed"
+
+    public Train(String trainType, String daysOfOperation) {
+        this.trainType = trainType;
+        this.daysOfOperation = daysOfOperation;
+    }
 
     //check if train runs on a specific day (case-insensitive), supports "Daily" and ranges like Mon-Fri, Fri-Sun
     public boolean operatesOn(String day) {

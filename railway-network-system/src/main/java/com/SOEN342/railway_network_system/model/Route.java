@@ -6,20 +6,38 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
 @Data
+@Entity
+@Table(name = "routes")
 @NoArgsConstructor
 @AllArgsConstructor
 public class Route {
+
+    @Id
+    @Column(name = "route_id")
     private String routeID; 
+
+    @Column(name = "departure_city", nullable = false)
     private String departureCity;
-    private String arrivalCity; 
+
+    @Column(name = "arrival_city", nullable = false)
+    private String arrivalCity;
+    
+    @Column(name = "departure_time", nullable = false)
+    @Temporal(TemporalType.TIMESTAMP)
     private Date departureTime;
+
+    @Column(name = "arrival_time", nullable = false)
+    @Temporal(TemporalType.TIMESTAMP)
     private Date arrivalTime; 
+
+    @Column(name = "total_duration")
     private String totalDuration; 
 
     //calculate total duration of train ride 
