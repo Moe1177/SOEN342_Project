@@ -66,8 +66,10 @@ public class RoutesDB {
             for (Route first : fromRoutes) {
                 for (Route second : toRoutes) {
                     if (first.getArrivalCity() != null && first.getArrivalCity().equalsIgnoreCase(second.getDepartureCity())) {
-                        result.add(first);
-                        result.add(second);
+                        if (canConnect(first, second)) {
+                            result.add(first);
+                            result.add(second);
+                        }
                         
                     }
                 }
@@ -96,9 +98,18 @@ public class RoutesDB {
     }
 
     private boolean canConnect(Route a, Route b) {
-        //if (a.getArrivalTime() == null || b.getDepartureTime() == null) return true; // if missing times, assume connectable
-        //return !a.getArrivalTime().after(b.getDepartureTime());
-        return true;
+        if (a == null || b == null) return false;
+        if (a.getArrivalCity() == null || b.getDepartureCity() == null) return false;
+        if (!a.getArrivalCity().equalsIgnoreCase(b.getDepartureCity())) return false;
+        if (a.getArrivalTime() == null || b.getDepartureTime() == null) return false;
+        long diff = b.getDepartureTime().getTime() - a.getArrivalTime().getTime();
+        if (diff < 0) {
+            // handle next-day departures
+            diff += java.util.concurrent.TimeUnit.DAYS.toMillis(1);
+        }
+        // must be non-negative and at most 6 hours
+        long maxLayover = java.util.concurrent.TimeUnit.HOURS.toMillis(6);
+        return diff >= 0 && diff <= maxLayover;
     }
 
     // expose last search results (defensive copy)
