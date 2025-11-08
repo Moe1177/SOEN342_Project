@@ -264,6 +264,8 @@ public class Console {
             System.out.println("Invalid number.");
             return;
         }
+        // Create trip first so reservations can reference it
+        Trip t = tripsDB.createTrip(selected, new ArrayList<>(), travelDate);
         List<Reservation> resList = new ArrayList<>();
         for(int i=0;i<n;i++){
             System.out.println("-- Traveler " + (i+1) + " --");
@@ -280,15 +282,14 @@ public class Console {
             String cls = scanner.nextLine().trim();
             if(cls.isEmpty()) cls = "second";
             try{
-                Reservation r = reservationsDB.createReservation(fn, ln, age, gid, selected.getRouteID(), cls.toLowerCase());
+                Client savedClient = clientsDB.upsertClient(fn, ln, gid, age);
+                Reservation r = reservationsDB.createReservation(fn, ln, age, gid, selected.getRouteID(), cls.toLowerCase(), t.getTripId(), savedClient.getClientId());
                 resList.add(r);
-                clientsDB.upsertClient(fn, ln, gid, age);
             }catch(IllegalStateException dup){
                 System.out.println("Cannot add reservation: " + dup.getMessage());
                 return;
             }
         }
-        Trip t = tripsDB.createTrip(selected, resList, travelDate);
         System.out.println("✅ Trip booked! Trip ID: " + t.getTripId());
         System.out.println("Tickets:");
         for(Reservation r: resList){

@@ -4,13 +4,9 @@ import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,11 +15,11 @@ import org.springframework.stereotype.Component;
 import com.SOEN342.railway_network_system.model.Reservation;
 import com.SOEN342.railway_network_system.model.Route;
 import com.SOEN342.railway_network_system.model.Trip;
+import com.SOEN342.railway_network_system.model.TripEntity;
 
 @Component
 public class TripsDB {
-    private final Map<String, Trip> trips = new LinkedHashMap<>(); 
-    private final Map<String, List<Reservation>> tripToReservations = new HashMap<>();
+    private final TripRepository tripRepository;
 
     private final SecureRandom rng = new SecureRandom();
     private final SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd");
@@ -31,7 +27,12 @@ public class TripsDB {
     @Autowired
     private ReservationsDB reservationsDB;
 
-    //generate unique alphanumeric trip id, prefixed with date for readability
+    @Autowired
+    public TripsDB(TripRepository tripRepository) {
+        this.tripRepository = tripRepository;
+    }
+
+    // generate unique alphanumeric trip id, prefixed with date for readability
     private String genTripId(){
         String date = fmt.format(new Date());
         String alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // avoid ambiguous chars
@@ -39,54 +40,57 @@ public class TripsDB {
         for(int i=0;i<6;i++){
             sb.append(alphabet.charAt(rng.nextInt(alphabet.length())));
         }
-        String id = sb.toString();
-        while(trips.containsKey(id)){
-            id = sb.append(alphabet.charAt(rng.nextInt(alphabet.length()))).toString();
-        }
-        return id;
+        return sb.toString();
     }
 
     public synchronized Trip createTrip(Route connection, List<Reservation> reservationsForTrip, Date departureDate){
         if(connection == null) throw new IllegalArgumentException("Connection is required");
         String tripId = genTripId();
-        Trip t = new Trip(tripId, connection.getRouteID(), departureDate == null ? new Date() : departureDate);
+        TripEntity entity = new TripEntity(tripId, connection.getRouteID(), departureDate == null ? new Date() : departureDate);
+        tripRepository.save(entity);
+
+        Trip t = new Trip(tripId, entity.getRouteId(), entity.getDepartureDate());
         if(reservationsForTrip != null){
             for(Reservation r: reservationsForTrip){
                 t.addReservation(r);
             }
         }
-        trips.put(tripId, t);
-        tripToReservations.put(tripId, new ArrayList<>(t.getReservations()));
         return t;
     }
 
     public List<Trip> getTripsForClient(String lastName, String govId){
-        //find all reservations for this client, then map to their trips
-        Set<String> ticketOnRoute = reservationsDB.findByPassenger(lastName, govId)
-                                                  .stream()
-                                                  .map(Reservation::getRouteID)
-                                                  .collect(Collectors.toSet());
+        // derive trips by querying reservations for the passenger, then loading trips
+        List<String> tripIds = reservationsDB.findByPassenger(lastName, govId).stream()
+            .collect(Collectors.groupingBy(Reservation::getRouteID)) // group not necessary; just map to their tripIds later
+            .keySet() // placeholder; we'll fetch all trips and filter by having any reservation for passenger
+            .stream().collect(Collectors.toList());
 
-        //collects trips whose reservations contain that passenger or route booked by them
-        List<Trip> res = new ArrayList<>();
-        for(Trip t: trips.values()){
-            boolean match = t.getReservations().stream().anyMatch(r -> 
-                r.getPassengerLastName().equalsIgnoreCase(lastName) && r.getPassengerGovId().equalsIgnoreCase(govId)
-            );
-            if(!match && ticketOnRoute.contains(t.getRouteID())){
-                match = true;
+        // fallback: simply load all trips and then attach reservations matching the passenger
+        List<Trip> all = tripRepository.findAll().stream()
+            .map(e -> new Trip(e.getTripId(), e.getRouteId(), e.getDepartureDate()))
+            .collect(Collectors.toList());
+
+        Map<String, List<Reservation>> byTrip = tripRepository.findAll().stream()
+            .collect(Collectors.toMap(TripEntity::getTripId, e -> reservationsDB.findByTrip(e.getTripId())));
+
+        List<Trip> mine = new ArrayList<>();
+        for (Trip t : all) {
+            List<Reservation> rs = byTrip.getOrDefault(t.getTripId(), new ArrayList<>());
+            for (Reservation r : rs) {
+                if (r.getPassengerLastName().equalsIgnoreCase(lastName) && r.getPassengerGovId().equalsIgnoreCase(govId)) {
+                    for (Reservation r2 : rs) t.addReservation(r2);
+                    mine.add(t);
+                    break;
+                }
             }
-            if(match) res.add(t);
         }
-        return res;
-    }
-
-    public Map<String, List<Reservation>> getTripReservationIndex(){
-        return Collections.unmodifiableMap(tripToReservations);
+        return mine;
     }
 
     public Collection<Trip> allTrips(){
-        return Collections.unmodifiableCollection(trips.values());
+        return tripRepository.findAll().stream()
+            .map(e -> new Trip(e.getTripId(), e.getRouteId(), e.getDepartureDate()))
+            .collect(Collectors.toList());
     }
 }
 
