@@ -5,13 +5,20 @@ import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
 
-@Data
+@Entity
+@DiscriminatorValue("First Class")
 @NoArgsConstructor
-@AllArgsConstructor
-public class FirstClass implements Ticket {
+public class FirstClass extends Ticket {
+
     private double ticketRate;
     private String ticketID;
+
+    public FirstClass(String routeId, double ticketRate) {
+        setRouteId(routeId);      // from CSV
+        setTicketRate(ticketRate); // from CSV
+    }
 
     @Override
     public double getTicketRate(){
@@ -25,6 +32,7 @@ public class FirstClass implements Ticket {
     }
 
     @Override
+    @Transient
     public String displayTicketInfo(){
         return "First Class Ticket - Rate: $ " + ticketRate + " Id: " + ticketID;
     }

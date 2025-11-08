@@ -33,3 +33,12 @@ CREATE TABLE trains (
   CONSTRAINT fk_trains_route
     FOREIGN KEY (route_id) REFERENCES routes(route_id)
 );
+
+CREATE TABLE tickets (
+  ticket_id   BIGINT AUTO_INCREMENT PRIMARY KEY,
+  route_id    VARCHAR(50)   NOT NULL,
+  ticket_type VARCHAR(31)   NOT NULL,    
+  ticket_rate DECIMAL(10,2) NOT NULL,
+  CONSTRAINT fk_tickets_route FOREIGN KEY (route_id)
+    REFERENCES routes(route_id)
+);
