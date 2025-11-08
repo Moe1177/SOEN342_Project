@@ -34,13 +34,9 @@ public class TicketsDB {
         if (routeID == null || classType == null) return null;
         String klass = classType.toLowerCase(Locale.ROOT);
         return ticketRepository.findByRouteIdAndTicketType(routeID, klass)
-            .map(tp -> {
-                if ("first".equals(klass)) {
-                    return (Ticket) new FirstClass(tp.getTicketRate(), String.valueOf(tp.getTicketId()));
-                } else {
-                    return (Ticket) new SecondClass(tp.getTicketRate(), String.valueOf(tp.getTicketId()));
-                }
-            })
+            .map(tp -> "first".equals(klass)
+                ? (Ticket) new FirstClass(routeID, tp.getTicketRate())
+                : (Ticket) new SecondClass(routeID, tp.getTicketRate()))
             .orElse(null);
     }
 
@@ -49,9 +45,9 @@ public class TicketsDB {
         List<Ticket> out = new ArrayList<>();
         for (TicketPrice tp : ticketRepository.findAll()) {
             if ("first".equalsIgnoreCase(tp.getTicketType())) {
-                out.add(new FirstClass(tp.getTicketRate(), String.valueOf(tp.getTicketId())));
+                out.add(new FirstClass(tp.getRouteId(), tp.getTicketRate()));
             } else {
-                out.add(new SecondClass(tp.getTicketRate(), String.valueOf(tp.getTicketId())));
+                out.add(new SecondClass(tp.getRouteId(), tp.getTicketRate()));
             }
         }
         return out; 
