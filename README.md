@@ -34,6 +34,49 @@ cd railway-network-system
 
 The application starts on http://localhost:8080 by default.
 
+## Quickstart with Docker (MySQL + Adminer)
+
+Prerequisites: Install Docker Desktop and Docker Compose.
+
+1. Start the database and Adminer:
+
+```bash
+docker compose up -d
+```
+
+This launches:
+
+- MySQL 8 on `localhost:3306` with DB `railway`, user `railway_user`, password `password`.
+- Adminer UI on `http://localhost:8081` (System: MySQL, Server: `mysql` or `localhost`, User: `railway_user`, Password: `password`, Database: `railway`).
+
+The file `mysql.sql` seeds base tables (including `ticket_prices` and `purchased_tickets`). The app will auto-create any missing tables via Hibernate (`spring.jpa.hibernate.ddl-auto=update`).
+
+2. Run the app against the Docker DB (use the `docker` Spring profile):
+
+- Windows (PowerShell):
+
+```powershell
+./mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=docker
+```
+
+- macOS/Linux:
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=docker
+```
+
+Alternatively, if running a packaged jar:
+
+```bash
+java -jar target/railway-network-system-0.0.1-SNAPSHOT.jar --spring.profiles.active=docker
+```
+
+Notes:
+
+- The app loads route/train/ticket price data from `src/main/resources/eu_rail_network.csv` on startup.
+- Price catalog rows are stored in `ticket_prices`. Purchased tickets are stored in `purchased_tickets`.
+- If you previously had price rows inside `tickets`, you can migrate them to `ticket_prices` and keep `purchased_tickets` for new purchases.
+
 ## To run a specific iteration
 
 Prerequisite: Install JDK ideally version 17-21 (required by Spring Boot 3.5).

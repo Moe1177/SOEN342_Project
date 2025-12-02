@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: railway
+      MYSQL_USER: railway_user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306" # change left-side port if 3306 is busy on host
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./mysql.sql:/docker-entrypoint-initdb.d/1-schema.sql:ro
+
+  adminer:
+    image: adminer:4
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+
+volumes:
+  db_data:

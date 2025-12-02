@@ -29,13 +29,13 @@ CREATE TABLE trains (
 );
 
 -- Ticket prices per route and class
-CREATE TABLE IF NOT EXISTS tickets (
+CREATE TABLE IF NOT EXISTS ticket_prices (
   ticket_id   BIGINT AUTO_INCREMENT PRIMARY KEY,
   route_id    VARCHAR(50) NOT NULL,
   ticket_type VARCHAR(80) NOT NULL,
   ticket_rate DOUBLE NOT NULL,
   CONSTRAINT uq_ticket_route_class UNIQUE (route_id, ticket_type),
-  CONSTRAINT fk_tickets_route FOREIGN KEY (route_id) REFERENCES routes(route_id)
+  CONSTRAINT fk_ticket_prices_route FOREIGN KEY (route_id) REFERENCES routes(route_id)
 );
 
 -- Trips (use same alphanumeric IDs as the app)
@@ -62,5 +62,22 @@ CREATE TABLE IF NOT EXISTS reservations (
   CONSTRAINT fk_res_trip   FOREIGN KEY (trip_id)  REFERENCES trips(trip_id),
   CONSTRAINT fk_res_route  FOREIGN KEY (route_id) REFERENCES routes(route_id),
   CONSTRAINT fk_res_client FOREIGN KEY (client_id) REFERENCES clients(client_id),
-  CONSTRAINT fk_res_ticket FOREIGN KEY (ticket_id) REFERENCES tickets(ticket_id)
+  CONSTRAINT fk_res_ticket FOREIGN KEY (ticket_id) REFERENCES ticket_prices(ticket_id)
+);
+
+-- Purchased tickets (persisted purchases)
+CREATE TABLE IF NOT EXISTS purchased_tickets (
+  id            BIGINT AUTO_INCREMENT PRIMARY KEY,
+  reservation_id BIGINT NOT NULL,
+  trip_id       VARCHAR(32) NOT NULL,
+  route_id      VARCHAR(50) NOT NULL,
+  client_id     BIGINT NULL,
+  ticket_id     BIGINT NULL,
+  ticket_class  VARCHAR(20) NOT NULL,
+  ticket_number BIGINT NOT NULL UNIQUE,
+  ticket_price  DOUBLE NOT NULL,
+  purchase_time DATETIME NOT NULL,
+  CONSTRAINT fk_pt_reservation FOREIGN KEY (reservation_id) REFERENCES reservations(reservation_id),
+  CONSTRAINT fk_pt_route       FOREIGN KEY (route_id) REFERENCES routes(route_id),
+  CONSTRAINT fk_pt_ticketprice FOREIGN KEY (ticket_id) REFERENCES ticket_prices(ticket_id)
 );
