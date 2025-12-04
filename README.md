@@ -8,6 +8,10 @@
 | Mijan Ullah        | 40287584       | [mijanullah12](https://github.com/mijanullah12) |
 | Emily Ng Youn Chen | 40285171       | [enyc24](https://github.com/enyc24)             |
 
+
+## Demo
+📹 [View Demo](https://docs.google.com/videos/d/13vCyyGLjnE0goGhy45CtzC0Y2uU3SVxnOEub9cvqxrQ/edit?usp=sharing)
+
 ## Start the project
 
 Prerequisite: Install JDK ideally version 17-21 (required by Spring Boot 3.5).
