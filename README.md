@@ -8,9 +8,72 @@
 | Mijan Ullah        | 40287584       | [mijanullah12](https://github.com/mijanullah12) |
 | Emily Ng Youn Chen | 40285171       | [enyc24](https://github.com/enyc24)             |
 
+## Demo
+
+📹 [View Demo](https://docs.google.com/videos/d/13vCyyGLjnE0goGhy45CtzC0Y2uU3SVxnOEub9cvqxrQ/edit?usp=sharing)
+
+## Database Setup
+
+The application requires MySQL 8.0 to be running. We use Docker to set up the database.
+
+### Prerequisites
+
+Install Docker Desktop and Docker Compose:
+
+- **Windows/macOS**: Download from [https://www.docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop)
+- **Linux**: Install Docker Engine and Docker Compose following the [official documentation](https://docs.docker.com/engine/install/)
+
+### Starting the Database
+
+1. **Start the database and Adminer:**
+
+   From the project root directory:
+
+   ```bash
+   docker compose up -d
+   ```
+
+   This launches:
+
+   - MySQL 8 on `localhost:3306` with DB `railway`, user `railway_user`, password `password`.
+   - Adminer UI on `http://localhost:8081` (System: MySQL, Server: `mysql` or `localhost`, User: `railway_user`, Password: `password`, Database: `railway`).
+
+   The file `mysql.sql` automatically seeds base tables when the container starts. The app will auto-create any missing tables via Hibernate (`spring.jpa.hibernate.ddl-auto=update`).
+
+   **Note:** If you need to manually run the SQL code to create the tables, all the SQL statements are included in the `mysql.sql` file located at the root of the railway-network-system folder: `mysql.sql`
+
+2. **Verify the database is running:**
+
+   ```bash
+   docker compose ps
+   ```
+
+3. **View database logs (if needed):**
+
+   ```bash
+   docker compose logs mysql
+   ```
+
+### Stopping the Database
+
+To stop the database:
+
+```bash
+docker compose down
+```
+
+To stop and remove all data volumes:
+
+```bash
+docker compose down -v
+```
+
 ## Start the project
 
-Prerequisite: Install JDK ideally version 17-21 (required by Spring Boot 3.5).
+Prerequisites:
+
+- Install JDK ideally version 17-21 (required by Spring Boot 3.5).
+- Ensure the database is running (see [Database Setup](#database-setup) above).
 
 1. Change into the application module directory
 
@@ -19,39 +82,6 @@ cd railway-network-system
 ```
 
 2. Start the server (builds and runs the Spring Boot app)
-
-- Windows (PowerShell):
-
-```powershell
-./mvnw.cmd spring-boot:run
-```
-
-- macOS/Linux:
-
-```bash
-./mvnw spring-boot:run
-```
-
-The application starts on http://localhost:8080 by default.
-
-## Quickstart with Docker (MySQL + Adminer)
-
-Prerequisites: Install Docker Desktop and Docker Compose.
-
-1. Start the database and Adminer:
-
-```bash
-docker compose up -d
-```
-
-This launches:
-
-- MySQL 8 on `localhost:3306` with DB `railway`, user `railway_user`, password `password`.
-- Adminer UI on `http://localhost:8081` (System: MySQL, Server: `mysql` or `localhost`, User: `railway_user`, Password: `password`, Database: `railway`).
-
-The file `mysql.sql` seeds base tables (including `ticket_prices` and `purchased_tickets`). The app will auto-create any missing tables via Hibernate (`spring.jpa.hibernate.ddl-auto=update`).
-
-2. Run the app against the Docker DB (use the `docker` Spring profile):
 
 - Windows (PowerShell):
 
@@ -65,17 +95,13 @@ The file `mysql.sql` seeds base tables (including `ticket_prices` and `purchased
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=docker
 ```
 
-Alternatively, if running a packaged jar:
+The application starts on http://localhost:8080 by default.
 
-```bash
-java -jar target/railway-network-system-0.0.1-SNAPSHOT.jar --spring.profiles.active=docker
-```
-
-Notes:
+**Notes:**
 
 - The app loads route/train/ticket price data from `src/main/resources/eu_rail_network.csv` on startup.
 - Price catalog rows are stored in `ticket_prices`. Purchased tickets are stored in `purchased_tickets`.
-- If you previously had price rows inside `tickets`, you can migrate them to `ticket_prices` and keep `purchased_tickets` for new purchases.
+- The app will auto-create any missing tables via Hibernate (`spring.jpa.hibernate.ddl-auto=update`).
 
 ## To run a specific iteration
 
