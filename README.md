@@ -81,28 +81,4 @@ Notes:
 - Price catalog rows are stored in `ticket_prices`. Purchased tickets are stored in `purchased_tickets`.
 - If you previously had price rows inside `tickets`, you can migrate them to `ticket_prices` and keep `purchased_tickets` for new purchases.
 
-## To run a specific iteration
-
-Prerequisite: Install JDK ideally version 17-21 (required by Spring Boot 3.5).
-
-1. Change into the desired iteration directory. Example:
-
-```bash
-cd railway-network-system/ITERATION_1/artifacts
-```
-
-2. Run the jar file (runs the Spring Boot app)
-
-- Windows (PowerShell):
-
-```powershell
-java -jar railway-network-system-0.0.1-SNAPSHOT.jar
-```
-
-- macOS/Linux:
-
-```bash
-java -jar railway-network-system-0.0.1-SNAPSHOT.jar
-```
-
 The application starts on http://localhost:8080 by default.
