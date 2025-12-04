@@ -1,4 +1,4 @@
-# SOEN342_Project
+# SOEN342 Railway Project
 
 ## Team members information
 
